@@ -80,7 +80,7 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Seu Sucesso Delivery 🚀 — Relatório financeiro")
-        self.config(padx=50, pady=50)
+        self.config(padx=50, pady=50, bg="#0F161F")
 
         frm = ttk.Frame(self, padding=12)
         frm.pack(fill="both", expand=True)
@@ -125,6 +125,12 @@ class App(tk.Tk):
 
         ttk.Button(self, text="Calcular", command=self.calcular).pack(pady=15)
 
+        self.lbl_resultado = ttk.Label(self, text="Resultado aparecerá aqui")
+        self.lbl_resultado.pack(pady=10)
+
+        '''self.lbl_resultado = ttk.Entry(self, state="readonly")
+        self.lbl_resultado.pack()'''
+
         self.cb_mes.bind("<<ComboboxSelected>>", lambda e: self._load_lojas())
         self.cb_loja.bind("<<ComboboxSelected>>", lambda e: self._load_operacoes())
 
@@ -161,7 +167,6 @@ class App(tk.Tk):
         )
         lojas = [ (r[0] or "").strip() for r in rows ]
         self.cb_loja["values"] = lojas
-        #self.cb_operacao["values"] = []
         if lojas:
             self.cb_loja.current(0)
             self._load_operacoes()
@@ -209,17 +214,18 @@ class App(tk.Tk):
         vliq = Decimal((self.valor_liquido.get()).replace('R$','').replace('.','').replace(',','.').strip())
         vbru = Decimal((self.valor_bruto.get()).replace('R$','').replace('.','').replace(',','.').strip())
         receb = Decimal((self.recebido_loja.get()).replace('R$','').replace('.','').replace(',','.').strip())
-        repas_ifd = Decimal((self.repassados_ifd.get()).replace('R$','').replace('.','').replace(',','.').strip())
+        repas_ifd = Decimal((self.repassados_ifd.get()).replace('-','').replace('R$','').replace('.','').replace(',','.').strip())
         entr = Decimal((self.entrega.get()).replace('R$','').replace('.','').replace(',','.').strip())
-        #print(type(vliq))
-        #print(vliq)
-        #já tenho: valor líquido, valor bruto, recebido loja, repassado ao ifood e entrega
-        #falta: repasse, taxa de repasse e custo ifood
         repasse = vliq + receb
         taxa_repasse = repasse/(vbru-repas_ifd)
         custo_ifd = 1-taxa_repasse
-        #insert_db()
-        print(f"Valor líquido = {vliq}\nRecebido via loja = {receb}\nValor bruto = {vbru}\nRepassado ao iFood = {repas_ifd}\nValor dos itens = {valor_itens}\nTaxa de repasse = {taxa_repasse}\nCusto iFood={custo_ifd}")
+
+        #cabeçalho da função:
+        #def insert_db(vliq, receb, vbrt, rps_ifd, repasse, taxa_rps, custo_ifd, entr)
+
+        insert_db(vliq, receb, vbru, repas_ifd, repasse, taxa_repasse, custo_ifd, entr)
+        
+        self.lbl_resultado.config(text=f"Valor líquido = {vliq}\nRecebido via loja = {receb}\nValor bruto = {vbru}\nRepassado ao iFood = {repas_ifd}\nValor dos itens = {valor_itens}\nTaxa de repasse = {taxa_repasse}\nCusto iFood={custo_ifd}")
 
 
 if __name__ == '__main__':
