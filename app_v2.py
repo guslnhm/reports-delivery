@@ -23,17 +23,30 @@ DSN = f"host={PGHOST} port={PGPORT} dbname={PGDATABASE} user={PGUSER} password={
 TABLE = "public.financeiro_mensal"
 COLS = ("valor_liquido", "recebido_via_loja", "valor_bruto", "repassados_ao_ifood", "repasse", "taxa_repasse", "custo_ifood", "tempo_medio_entrega")
 
-def insert_db(vliq, receb, vbrt, rps_ifd, repasse, taxa_rps, custo_ifd, entr):
+def update_db(mes, loja, operacao, vliq, receb, vbrt, rps_ifd, repasse, taxa_rps, custo_ifd, entr):
     sql = f"""
-        INSERT INTO {TABLE} ({', '.join(COLS)})
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
+        UPDATE {TABLE}
+            SET valor_liquido = %s,
+                recebido_via_loja = %s,
+                valor_bruto = %s,
+                repassados_ao_ifood = %s,
+                repasse = %s,
+                taxa_repasse = %s,
+                custo_ifood = %s,
+                tempo_medio_entrega = %s
+        WHERE mes = %s
+            AND loja = %s
+            AND operacao = %s;
     """
+    params = (
+        vliq, receb, vbrt, rps_ifd, repasse, taxa_rps, custo_ifd, entr, mes, loja, operacao
+    )
     conn = None
     try:
         conn = psycopg2.connect(DSN)
         with conn:
             with conn.cursor() as cur:
-                cur.execute(sql, (vliq, receb, vbrt, rps_ifd, repasse, taxa_rps, custo_ifd, entr))
+                cur.execute(sql, params)
     except Exception as e:
         raise e
     finally:
@@ -221,9 +234,9 @@ class App(tk.Tk):
         custo_ifd = 1-taxa_repasse
 
         #cabeçalho da função:
-        #def insert_db(vliq, receb, vbrt, rps_ifd, repasse, taxa_rps, custo_ifd, entr)
+        #def update_db(vliq, receb, vbrt, rps_ifd, repasse, taxa_rps, custo_ifd, entr)
 
-        insert_db(vliq, receb, vbru, repas_ifd, repasse, taxa_repasse, custo_ifd, entr)
+        update_db(mes, loja, operacao, vliq, receb, vbru, repas_ifd, repasse, taxa_repasse, custo_ifd, entr)
         
         self.lbl_resultado.config(text=f"Valor líquido = {vliq}\nRecebido via loja = {receb}\nValor bruto = {vbru}\nRepassado ao iFood = {repas_ifd}\nValor dos itens = {valor_itens}\nTaxa de repasse = {taxa_repasse}\nCusto iFood={custo_ifd}")
 
