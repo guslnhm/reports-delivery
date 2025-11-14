@@ -23,23 +23,24 @@ DSN = f"host={PGHOST} port={PGPORT} dbname={PGDATABASE} user={PGUSER} password={
 TABLE = "public.financeiro_mensal"
 COLS = ("valor_liquido", "recebido_via_loja", "valor_bruto", "repassados_ao_ifood", "repasse", "taxa_repasse", "custo_ifood", "tempo_medio_entrega")
 
-def update_db(mes, loja, operacao, vliq, receb, vbrt, rps_ifd, repasse, taxa_rps, custo_ifd, entr):
+def update_db(mes, loja, operacao, vliq, receb, vbrt, rps_ifd, repasse, taxa_rps, custo_ifd, entr, nv_cl):
     sql = f"""
         UPDATE {TABLE}
-            SET valor_liquido = %s,
-                recebido_via_loja = %s,
-                valor_bruto = %s,
-                repassados_ao_ifood = %s,
-                repasse = %s,
-                taxa_repasse = %s,
-                custo_ifood = %s,
-                tempo_medio_entrega = %s
+            SET valor_liquido = COALESCE(%s, valor_liquido),
+                recebido_via_loja = COALESCE(%s, recebido_via_loja),
+                valor_bruto = COALESCE(%s, valor_bruto),
+                repassados_ao_ifood = COALESCE(%s, repassados_ao_ifood),
+                repasse = COALESCE(%s, repasse),
+                taxa_repasse = COALESCE(%s, taxa_repasse),
+                custo_ifood = COALESCE(%s, custo_ifood),
+                tempo_medio_entrega = COALESCE(%s, tempo_medio_entrega),
+                novos_clientes = COALESCE(%s, novos_clientes)
         WHERE mes = %s
             AND loja = %s
             AND operacao = %s;
     """
     params = (
-        vliq, receb, vbrt, rps_ifd, repasse, taxa_rps, custo_ifd, entr, mes, loja, operacao
+        vliq, receb, vbrt, rps_ifd, repasse, taxa_rps, custo_ifd, entr, nv_cl, mes, loja, operacao
     )
     conn = None
     try:
@@ -136,6 +137,11 @@ class App(tk.Tk):
         self.entrega = ttk.Entry(self)
         self.entrega.pack()
 
+        # novos clientes
+        ttk.Label(self, text="Novos clientes:").pack(pady=(10,0))
+        self.novos_clientes = ttk.Entry(self)
+        self.novos_clientes.pack()
+
         ttk.Button(self, text="Calcular", command=self.calcular).pack(pady=15)
 
         self.lbl_resultado = ttk.Label(self, text="Resultado aparecerá aqui")
@@ -149,6 +155,23 @@ class App(tk.Tk):
 
 
         self._load_meses()
+
+    def parse_decimal(self, valor_str):
+        valor_str = valor_str.strip()
+        if valor_str == "":
+            return None
+        try:
+            return Decimal(
+                valor_str
+                .replace("R$", "")
+                .replace(".", "")
+                .replace(",", ".")
+                .replace("-", "")
+                .strip()
+            )
+        except InvalidOperation:
+            return "erro"
+
     
     def _load_meses(self):
         try:
@@ -223,22 +246,40 @@ class App(tk.Tk):
 
         valor_itens = Decimal(row[0])
 
-        # ordem: vliq, receb, vbrt, rps_ifood, repasse, taxa_rps, custo_ifd, entr
-        vliq = Decimal((self.valor_liquido.get()).replace('R$','').replace('.','').replace(',','.').strip())
+        # ordem: vliq, receb, vbrt, rps_ifood, repasse, taxa_rps, custo_ifd, entr, novos_clientes
+        '''vliq = Decimal((self.valor_liquido.get()).replace('R$','').replace('.','').replace(',','.').strip())
         vbru = Decimal((self.valor_bruto.get()).replace('R$','').replace('.','').replace(',','.').strip())
         receb = Decimal((self.recebido_loja.get()).replace('R$','').replace('.','').replace(',','.').strip())
         repas_ifd = Decimal((self.repassados_ifd.get()).replace('-','').replace('R$','').replace('.','').replace(',','.').strip())
-        entr = Decimal((self.entrega.get()).replace('R$','').replace('.','').replace(',','.').strip())
-        repasse = vliq + receb
-        taxa_repasse = repasse/(vbru-repas_ifd)
-        custo_ifd = 1-taxa_repasse
+        entr = Decimal((self.entrega.get()).strip())
+        nv_cl = Decimal((self.novos_clientes.get()).strip())'''
+
+        vliq = self.parse_decimal(self.valor_liquido.get())
+        vbru = self.parse_decimal(self.valor_bruto.get())
+        receb = self.parse_decimal(self.recebido_loja.get())
+        repas_ifd = self.parse_decimal(self.repassados_ifd.get())
+        entr = self.parse_decimal(self.entrega.get())
+        nv_cl = self.parse_decimal(self.novos_clientes.get())
+
+        repasse = None
+        taxa_repasse = None
+        custo_ifd = None
+        
+        if vliq is not None and receb is not None:
+            repasse = vliq + receb
+        
+        if repasse is not None and vbru is not None and repas_ifd is not None:
+            taxa_repasse = repasse/(vbru-repas_ifd)
+
+        if taxa_repasse is not None:
+            custo_ifd = 1-taxa_repasse
 
         #cabeçalho da função:
-        #def update_db(vliq, receb, vbrt, rps_ifd, repasse, taxa_rps, custo_ifd, entr)
+        #def update_db(vliq, receb, vbrt, rps_ifd, repasse, taxa_rps, custo_ifd, entr, nv_cl)
 
-        update_db(mes, loja, operacao, vliq, receb, vbru, repas_ifd, repasse, taxa_repasse, custo_ifd, entr)
+        update_db(mes, loja, operacao, vliq, receb, vbru, repas_ifd, repasse, taxa_repasse, custo_ifd, entr, nv_cl)
         
-        self.lbl_resultado.config(text=f"Valor líquido = {vliq}\nRecebido via loja = {receb}\nValor bruto = {vbru}\nRepassado ao iFood = {repas_ifd}\nValor dos itens = {valor_itens}\nTaxa de repasse = {taxa_repasse}\nCusto iFood={custo_ifd}")
+        self.lbl_resultado.config(text=f"Taxa de repasse = {taxa_repasse}\nCusto iFood={custo_ifd}")
 
 
 if __name__ == '__main__':
