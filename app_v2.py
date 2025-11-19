@@ -99,6 +99,9 @@ class App(tk.Tk):
         frm = ttk.Frame(self, padding=12)
         frm.pack(fill="both", expand=True)
 
+        # botão de limpar
+        ttk.Button(self, text="Limpar", command=self.limpar).pack(pady=15)
+
         #comboboxes
         ttk.Label(frm, text="Mês:").grid(row=0, column=0, sticky="w")
         self.cb_mes = ttk.Combobox(frm, state="readonly", width=28)
@@ -155,6 +158,14 @@ class App(tk.Tk):
 
 
         self._load_meses()
+
+    def limpar(self):
+        self.valor_liquido.delete(0, tk.END)
+        self.recebido_loja.delete(0, tk.END)
+        self.valor_bruto.delete(0, tk.END)
+        self.repassados_ifd.delete(0, tk.END)
+        self.entrega.delete(0, tk.END)
+        self.novos_clientes.delete(0, tk.END)
 
     def parse_decimal(self, valor_str):
         valor_str = valor_str.strip()
