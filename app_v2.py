@@ -99,6 +99,8 @@ class App(tk.Tk):
         frm = ttk.Frame(self, padding=12)
         frm.pack(fill="both", expand=True)
 
+        self.operacao_unica = None
+
         # botão de limpar
         ttk.Button(self, text="Limpar", command=self.limpar).pack(pady=15)
 
@@ -111,9 +113,12 @@ class App(tk.Tk):
         self.cb_loja = ttk.Combobox(frm, state="readonly", width=28)
         self.cb_loja.grid(row=1, column=1, sticky="ew", padx=6)
 
-        ttk.Label(frm, text="Operação:").grid(row=2, column=0, sticky="w")
+        '''ttk.Label(frm, text="Operação:").grid(row=2, column=0, sticky="w")
         self.cb_operacao = ttk.Combobox(frm, state="readonly", width=28)
-        self.cb_operacao.grid(row=2, column=1, sticky="ew", padx=6)
+        self.cb_operacao.grid(row=2, column=1, sticky="ew", padx=6)'''
+
+        self.lbl_operacao = ttk.Label(frm, text="Operação:")
+        self.cb_operacao = ttk.Combobox(frm, state="readonly", width=28)
 
         # valor líquido
         ttk.Label(self, text="Valor líquido:").pack(pady=(10,0))
@@ -159,6 +164,32 @@ class App(tk.Tk):
 
         self._load_meses()
 
+    def hide_cbx(self, operacao_unica):
+        if self.lbl_operacao.winfo_ismapped():
+            self.lbl_operacao.grid_remove()
+        if self.cb_operacao.winfo_ismapped():
+            self.cb_operacao.grid_remove()
+
+        self.operacao_unica = operacao_unica
+
+        self.adjust_layout()
+    
+    def show_cbx(self, operacoes):
+        self.lbl_operacao.grid(row=2, column=0, sticky="w", pady=(10,0))
+        self.cb_operacao.grid(row=2, column=1, sticky="ew", padx=6, pady=(10,0))
+
+        self.cb_operacao['values'] = operacoes
+        if operacoes:
+            self.cb_operacao.set(operacoes[0])
+        
+        self.operacao_unica = None
+
+        self.adjust_layout()
+    
+    def adjust_layout(self):
+        pass
+
+
     def limpar(self):
         self.valor_liquido.delete(0, tk.END)
         self.recebido_loja.delete(0, tk.END)
@@ -198,7 +229,11 @@ class App(tk.Tk):
     def _load_lojas(self):
         mes = (self.cb_mes.get() or "").strip()
         self.cb_loja["values"] = []
-        self.cb_operacao["values"] = []
+
+        self.operacao_unica = None
+        if self.cb_operacao.winfo_ismapped():
+            self.cb_operacao.set('')
+
         if not mes:
             return
         
@@ -237,15 +272,24 @@ class App(tk.Tk):
             fetch="all"
         )
         operacoes = [ (r[0] or "").strip() for r in rows ]
-        self.cb_operacao["values"] = operacoes
-
-        if operacoes:
-            self.cb_operacao.current(0)
+        
+        if len(operacoes) == 1:
+            self.hide_cbx(operacoes[0])
+        else:
+            self.show_cbx(operacoes)
 
     def calcular(self):
         mes = self.cb_mes.get().strip()
         loja = self.cb_loja.get().strip()
-        operacao = self.cb_operacao.get().strip()
+        
+        if self.operacao_unica:
+            operacao = self.operacao_unica
+        else:
+            operacao = self.cb_operacao.get().strip()
+        
+        if not operacao:
+            messagebox.showerror("Erro", "Nenhuma operação selecionada")
+            return
 
         sql = """
             SELECT valor_itens
