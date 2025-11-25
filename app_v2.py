@@ -1,16 +1,11 @@
 import os
 import os
 from decimal import Decimal, InvalidOperation
-from datetime import datetime
 import tkinter as tk
 from tkinter import ttk, messagebox
 from dotenv import load_dotenv
-import gspread
-from openpyxl import Workbook, load_workbook #excluir
-import psycopg2 # excluir
-from psycopg2.extras import execute_values
+import psycopg2
 
-# .env
 load_dotenv()
 PGHOST = os.getenv("PGHOST")
 PGPORT = os.getenv("PGPORT")
@@ -21,7 +16,6 @@ PGPASSWORD = os.getenv("PGPASSWORD")
 DSN = f"host={PGHOST} port={PGPORT} dbname={PGDATABASE} user={PGUSER} password={PGPASSWORD}"
 
 TABLE = "public.financeiro_mensal"
-COLS = ("valor_liquido", "recebido_via_loja", "valor_bruto", "repassados_ao_ifood", "repasse", "taxa_repasse", "custo_ifood", "tempo_medio_entrega")
 
 def update_db(mes, loja, operacao, vliq, receb, vbrt, rps_ifd, repasse, taxa_rps, custo_ifd, entr, nv_cl):
     sql = f"""
