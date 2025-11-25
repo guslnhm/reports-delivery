@@ -95,6 +95,9 @@ class App(tk.Tk):
 
         self.operacao_unica = None
 
+        self.loja_anterior = ""
+        self.operacao_anterior = ""
+
         # botão de limpar
         ttk.Button(self, text="Limpar", command=self.limpar).pack(pady=15)
 
@@ -221,6 +224,9 @@ class App(tk.Tk):
             messagebox.showerror("Erro ao carregar meses", str(e))
     
     def _load_lojas(self):
+        self.loja_anterior = self.cb_loja.get().strip()
+        self.operacao_anterior = self.cb_operacao.get().strip() if not self.operacao_unica else self.operacao_unica
+
         mes = (self.cb_mes.get() or "").strip()
         self.cb_loja["values"] = []
 
@@ -243,8 +249,15 @@ class App(tk.Tk):
         )
         lojas = [ (r[0] or "").strip() for r in rows ]
         self.cb_loja["values"] = lojas
-        if lojas:
+        '''if lojas:
             self.cb_loja.current(0)
+            self._load_operacoes()'''
+        
+        if lojas:
+            if self.loja_anterior in lojas:
+                self.cb_loja.set(self.loja_anterior)
+            else:
+                self.cb_loja.current(0)
             self._load_operacoes()
     
     def _load_operacoes(self):
@@ -271,6 +284,8 @@ class App(tk.Tk):
             self.hide_cbx(operacoes[0])
         else:
             self.show_cbx(operacoes)
+            if operacoes and self.operacao_anterior in operacoes:
+                self.cb_operacao.set(self.operacao_anterior)
 
     def calcular(self):
         mes = self.cb_mes.get().strip()
