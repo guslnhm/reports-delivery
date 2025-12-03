@@ -15,7 +15,7 @@ PGPASSWORD = os.getenv("PGPASSWORD")
 
 DSN = f"host={PGHOST} port={PGPORT} dbname={PGDATABASE} user={PGUSER} password={PGPASSWORD}"
 
-TABLE = "public.financeiro_mensal"
+TABLE = "analytics.financeiro_mensal"
 
 def update_db(mes, loja, operacao, vliq, receb, vbrt, rps_ifd, repasse, taxa_rps, custo_ifd, entr, nv_cl):
     sql = f"""
@@ -61,19 +61,19 @@ def run_query(sql, params=None, fetch="all"):
 # queries para combobox
 SQL_MESES = """
 SELECT DISTINCT mes
-FROM financeiro_mensal;
+FROM analytics.financeiro_mensal;
 """
 
 SQL_LOJAS = """
 SELECT DISTINCT loja
-FROM financeiro_mensal
+FROM analytics.financeiro_mensal
 WHERE mes = %s
 ORDER BY loja;
 """
 
 SQL_OPERACOES = """
 SELECT DISTINCT operacao
-FROM financeiro_mensal
+FROM analytics.financeiro_mensal
 WHERE mes = %s AND loja = %s
 ORDER BY operacao;
 """
@@ -240,7 +240,7 @@ class App(tk.Tk):
         rows = run_query(
             """
             SELECT DISTINCT loja
-            FROM financeiro_mensal
+            FROM analytics.financeiro_mensal
             WHERE LOWER(TRIM(mes)) = LOWER(TRIM(%s))
             ORDER BY loja;
             """,
@@ -270,7 +270,7 @@ class App(tk.Tk):
         rows = run_query(
             """
             SELECT DISTINCT operacao
-            FROM financeiro_mensal
+            FROM analytics.financeiro_mensal
             WHERE LOWER(TRIM(mes))  = LOWER(TRIM(%s))
             AND LOWER(TRIM(loja)) = LOWER(TRIM(%s))
             ORDER BY operacao;
@@ -302,7 +302,7 @@ class App(tk.Tk):
 
         sql = """
             SELECT valor_itens
-            FROM financeiro_mensal
+            FROM analytics.financeiro_mensal
             WHERE mes = %s AND loja = %s AND operacao = %s;
         """
 
