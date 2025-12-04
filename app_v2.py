@@ -90,10 +90,6 @@ class App(tk.Tk):
         self.cb_loja = ttk.Combobox(frm, state="readonly", width=28)
         self.cb_loja.grid(row=1, column=1, sticky="ew", padx=6)
 
-        '''ttk.Label(frm, text="Operação:").grid(row=2, column=0, sticky="w")
-        self.cb_operacao = ttk.Combobox(frm, state="readonly", width=28)
-        self.cb_operacao.grid(row=2, column=1, sticky="ew", padx=6)'''
-
         self.lbl_operacao = ttk.Label(frm, text="Operação:")
         self.cb_operacao = ttk.Combobox(frm, state="readonly", width=28)
 
@@ -131,9 +127,6 @@ class App(tk.Tk):
 
         self.lbl_resultado = ttk.Label(self, text="Resultado aparecerá aqui")
         self.lbl_resultado.pack(pady=10)
-
-        '''self.lbl_resultado = ttk.Entry(self, state="readonly")
-        self.lbl_resultado.pack()'''
 
         self.cb_mes.bind("<<ComboboxSelected>>", lambda e: self._load_lojas())
         self.cb_loja.bind("<<ComboboxSelected>>", lambda e: self._load_operacoes())
@@ -229,9 +222,6 @@ class App(tk.Tk):
         )
         lojas = [ (r[0] or "").strip() for r in rows ]
         self.cb_loja["values"] = lojas
-        '''if lojas:
-            self.cb_loja.current(0)
-            self._load_operacoes()'''
         
         if lojas:
             if self.loja_anterior in lojas:
@@ -290,14 +280,6 @@ class App(tk.Tk):
 
         valor_itens = Decimal(row[0])
 
-        # ordem: vliq, receb, vbrt, rps_ifood, repasse, taxa_rps, custo_ifd, entr, novos_clientes
-        '''vliq = Decimal((self.valor_liquido.get()).replace('R$','').replace('.','').replace(',','.').strip())
-        vbru = Decimal((self.valor_bruto.get()).replace('R$','').replace('.','').replace(',','.').strip())
-        receb = Decimal((self.recebido_loja.get()).replace('R$','').replace('.','').replace(',','.').strip())
-        repas_ifd = Decimal((self.repassados_ifd.get()).replace('-','').replace('R$','').replace('.','').replace(',','.').strip())
-        entr = Decimal((self.entrega.get()).strip())
-        nv_cl = Decimal((self.novos_clientes.get()).strip())'''
-
         vliq = self.parse_decimal(self.valor_liquido.get())
         vbru = self.parse_decimal(self.valor_bruto.get())
         receb = self.parse_decimal(self.recebido_loja.get())
@@ -317,9 +299,6 @@ class App(tk.Tk):
 
         if taxa_repasse is not None:
             custo_ifd = 1-taxa_repasse
-
-        #cabeçalho da função:
-        #def update_db(vliq, receb, vbrt, rps_ifd, repasse, taxa_rps, custo_ifd, entr, nv_cl)
 
         update_db(mes, loja, operacao, vliq, receb, vbru, repas_ifd, repasse, taxa_repasse, custo_ifd, entr, nv_cl)
         
