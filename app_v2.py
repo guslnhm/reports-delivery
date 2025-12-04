@@ -58,30 +58,10 @@ def run_query(sql, params=None, fetch="all"):
                 return cur.fetchall()
             return None
 
-# queries para combobox
+# query para combobox
 SQL_MESES = """
 SELECT DISTINCT mes
 FROM analytics.financeiro_mensal;
-"""
-
-SQL_LOJAS = """
-SELECT DISTINCT loja
-FROM analytics.financeiro_mensal
-WHERE mes = %s
-ORDER BY loja;
-"""
-
-SQL_OPERACOES = """
-SELECT DISTINCT operacao
-FROM analytics.financeiro_mensal
-WHERE mes = %s AND loja = %s
-ORDER BY operacao;
-"""
-
-SQL_GET_VALORES = """
-"""
-
-SQL_UPDATE_VALORES = """
 """
 
 class App(tk.Tk):
