@@ -17,7 +17,7 @@ DSN = f"host={PGHOST} port={PGPORT} dbname={PGDATABASE} user={PGUSER} password={
 
 TABLE = "analytics.financeiro_mensal"
 
-def update_db(mes, loja, operacao, vliq, receb, vbrt, rps_ifd, repasse, taxa_rps, custo_ifd, entr, nv_cl):
+def update_db(mes, loja, operacao, vliq, receb, vbrt, rps_ifd, repasse, taxa_rps, custo_ifd, entr, nv_cl, cnvs):
     sql = f"""
         UPDATE {TABLE}
             SET valor_liquido = COALESCE(%s, valor_liquido),
@@ -28,13 +28,14 @@ def update_db(mes, loja, operacao, vliq, receb, vbrt, rps_ifd, repasse, taxa_rps
                 taxa_repasse = COALESCE(%s, taxa_repasse),
                 custo_ifood = COALESCE(%s, custo_ifood),
                 tempo_medio_entrega = COALESCE(%s, tempo_medio_entrega),
-                novos_clientes = COALESCE(%s, novos_clientes)
+                novos_clientes = COALESCE(%s, novos_clientes),
+                conversao = COALESCE(%s, conversao)
         WHERE mes = %s
             AND loja = %s
             AND operacao = %s;
     """
     params = (
-        vliq, receb, vbrt, rps_ifd, repasse, taxa_rps, custo_ifd, entr, nv_cl, mes, loja, operacao
+        vliq, receb, vbrt, rps_ifd, repasse, taxa_rps, custo_ifd, entr, nv_cl, cnvs, mes, loja, operacao
     )
     conn = None
     try:
@@ -123,6 +124,11 @@ class App(tk.Tk):
         self.novos_clientes = ttk.Entry(self)
         self.novos_clientes.pack()
 
+        # conversão
+        ttk.Label(self, text="Conversão:").pack(pady=(10,0))
+        self.conversao = ttk.Entry(self)
+        self.conversao.pack()
+
         ttk.Button(self, text="Calcular", command=self.calcular).pack(pady=15)
 
         self.lbl_resultado = ttk.Label(self, text="Resultado aparecerá aqui")
@@ -167,6 +173,7 @@ class App(tk.Tk):
         self.repassados_ifd.delete(0, tk.END)
         self.entrega.delete(0, tk.END)
         self.novos_clientes.delete(0, tk.END)
+        self.conversao.delete(0, tk.END)
 
     def parse_decimal(self, valor_str):
         valor_str = valor_str.strip()
@@ -181,6 +188,21 @@ class App(tk.Tk):
                 .replace("-", "")
                 .strip()
             )
+        except InvalidOperation:
+            return "erro"
+    
+    def parse_decimal_v2(self, valor_str):
+        valor_str = valor_str.strip()
+        if valor_str == "":
+            return None
+        try:
+            valor_str = Decimal(
+                valor_str
+                .replace("%", "")
+                .replace(",",".")
+                .strip()
+            )
+            return valor_str/100
         except InvalidOperation:
             return "erro"
 
@@ -286,6 +308,7 @@ class App(tk.Tk):
         repas_ifd = self.parse_decimal(self.repassados_ifd.get())
         entr = self.parse_decimal(self.entrega.get())
         nv_cl = self.parse_decimal(self.novos_clientes.get())
+        cnvs = self.parse_decimal_v2(self.conversao.get())
 
         repasse = None
         taxa_repasse = None
@@ -300,7 +323,7 @@ class App(tk.Tk):
         if taxa_repasse is not None:
             custo_ifd = 1-taxa_repasse
 
-        update_db(mes, loja, operacao, vliq, receb, vbru, repas_ifd, repasse, taxa_repasse, custo_ifd, entr, nv_cl)
+        update_db(mes, loja, operacao, vliq, receb, vbru, repas_ifd, repasse, taxa_repasse, custo_ifd, entr, nv_cl, cnvs)
         
         self.lbl_resultado.config(text=f"Taxa de repasse = {taxa_repasse}\nCusto iFood={custo_ifd}")
 
